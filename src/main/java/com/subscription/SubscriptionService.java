@@ -87,6 +87,36 @@ public class SubscriptionService {
         }
     }
 
+    // ---------- Used by ReminderService ----------
+
+    /** Returns ACTIVE subscriptions whose renewal date is exactly the given date. */
+    public List<Subscription> getActiveRenewingOn(LocalDate date) throws SQLException {
+        String sql = "SELECT * FROM subscriptions WHERE status = 'ACTIVE' AND renewal_date = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDate(1, Date.valueOf(date));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return readList(rs);
+            }
+        }
+    }
+
+    /** Records that a reminder was successfully sent for the given renewal date. */
+    public void markReminderSent(int id, LocalDate renewalDate) throws SQLException {
+        String sql = "UPDATE subscriptions SET reminder_sent_for = ? WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDate(1, Date.valueOf(renewalDate));
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        }
+    }
+
     // ---------- Cancel ----------
 
     /**
